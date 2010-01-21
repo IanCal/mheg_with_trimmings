@@ -1,0 +1,23 @@
+Although currently empty, this is the plan:
+
+MHEG-5 code has an unusual structure and code flow, which can make programming difficult. While writing code I noticed that I was using several common patterns to emulate if statements, for loops, etc. I decided it would be simpler, and make my programs more reliable, if I automated this. 
+
+This is a proof of concept, and therefore uses a very simple parsing method. A better approach would be to add these features to the BNF grammar.
+
+Plan:
+1) Add named variables.
+    - Simple enough for the most part. However scope must be considered, especially with function calls.
+
+2) Add function calls.
+    - Could do this with code replacement, but this wouldn't allow recursion. Best approach depends on the cost of re-assigning variables. Best solution probably is to offer both inline and external functions.
+
+3) If statements.
+    - Simple conditionals first (a < b, b == c, etc)
+    - Allow more complex conditionals in CNF or DNF
+    - Convert any statement into equivalent CNF/DNF
+
+4) While loop.
+    - Simply an if statement with a call to the top again.
+
+5) For loop.
+    - Syntactic sugar for a while loop. Add first statement just before the while loop and the last just before the call.
