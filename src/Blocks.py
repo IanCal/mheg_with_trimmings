@@ -38,7 +38,7 @@ class BasicBlock():
             except StopIteration:
                 return
             # Get each token (separated from each other by spaces and ignoring whitespace)
-            tokens = line.lower().split()
+            tokens = line
             if (len(tokens) > 0):
                 # If the end of a block, stop parsing
                 if (tokens[0] == "}"):
@@ -70,24 +70,20 @@ class IfBlock(BasicBlock):
         # Get the variable name for the if statement
         self.conditionalVariableName = "IfStatement%d" % (conditionalVariableNumber.next())
         try:
-            conditionLine = codeIterator.next().lower().split()
+            conditionLine = codeIterator.next()
             if conditionLine[0] != ":condition":
                 raise ParseError(str(conditionLine), "Should be a condition line starting with :condition")
             #TODO this must actually parse the conditional
             self.condition = Conditional(conditionLine[2:])
-            # Now look for the {:iftrue line, skip over any comments
-            iftrue = codeIterator.next().lower().split()
-            while iftrue[0] == "//":
-                iftrue = codeIterator.next().lower().split()
+            # Now look for the {:iftrue line
+            iftrue = codeIterator.next()
             if iftrue[0] != "{:iftrue":
                 raise ParseError(str(iftrue), "Should be a line starting with {:iftrue")
             # Parse the block of code within the iftrue statement
             self.iftrue = BasicBlock(codeIterator)
 
-            # Now look for the {:iffalse line, skip over any comments. This is optional so a } might be encountered
-            iffalse = codeIterator.next().lower().split()
-            while iffalse[0] == "//":
-                iffalse = codeIterator.next().lower().split()
+            # Now look for the {:iffalse line. This is optional so a } might be encountered
+            iffalse = codeIterator.next()
             # End of the block?
             if iffalse[0] == "}":
                 self.iffalse = None
@@ -134,10 +130,68 @@ class IfBlock(BasicBlock):
         self.code.append(":TestVariable( %s %d :IndirectRef %s )" % (self.conditionalVariableName, self.condition.comparison, self.condition.second))
         self.code.append("// End of auto-generated if-statement code")
 
+class ForBlock(BasicBlock):
+    def customParsing(self, codeIterator):
+        # Get the variable name for the if statement
+        self.conditionalVariableName = "ForStatement%d" % (conditionalVariableNumber.next())
+        self.setup = ""
+        self.expression = ""
+        self.body = None
+        self.condition = None
+        try:
+            # The order of a for loop is setup, conditional, expression (x++, etc) and then body. Only the conditional and body are required
+            line = codeIterator.next()
+            while line[0] != "}":
+                if line[0] == "{:setup":
+                    self.setup = BasicBlock(codeIterator)
+                elif line[0] == ":condition":
+                    self.condition = Conditional(line[2:])
+                elif line[0] == "{:expression":
+                    self.expression = BasicBlock(codeIterator)
+                elif line[0] == "{:body":
+                    self.body = BasicBlock(codeIterator)
+                else:
+                    raise ParseError(str(line), "Unexpected line in for loop")
+                line = codeIterator.next()
+            if self.body == None:
+                raise ParseError("", "Missing a body in the for loop")
+            if self.condition == None:
+                raise ParseError("", "Missing a conditional in the for loop")
+        except Exception as e:
+            raise ParseError("","Raised an exception: " + str(e))
+        return
+
+    def generatePreamble(self):
+        self.preamble.append("""
+        {:Link
+            %d
+            :EventSource %s          // Source is this test variable
+            :EventType TestEvent
+            :EventData True          // If condition is true
+            :LinkEffect (
+                %s
+                %s
+                :SetVariable( %s :IndirectRef %s )
+                :TestVariable( %s %d :IndirectRef %s )
+            )
+        }
+        """ % (id.next(), self.conditionalVariableName, str(self.body), str(self.expression), self.condition.first, self.conditionalVariableName, self.condition.comparison, self.condition.second))
+
+
+    def generateCode(self):
+        #Setup the variable
+        self.code.append("// Auto-generated for-loop code")
+        self.code.append(str(self.setup))
+        self.code.append(":SetVariable( %s :IndirectRef %s )" % (self.conditionalVariableName, self.condition.first) )
+        # Run the test
+        self.code.append(":TestVariable( %s %d :IndirectRef %s )" % (self.conditionalVariableName, self.condition.comparison, self.condition.second))
+        self.code.append("// End of auto-generated for-loop code")
+
 
 
 tokenDictionary = {
-        "{:if" : IfBlock
+        "{:if" : IfBlock,
+        "{:for" : ForBlock
         }
 def uniqueNumbers():
     number = 0

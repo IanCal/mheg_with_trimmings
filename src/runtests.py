@@ -77,7 +77,7 @@ invalidConditionals = [
         ["X","<==","Y"]
         ]
 
-validForLoops = [
+validForBlocks = [
         """
         {:for
             :Condition ( X > 3 )
@@ -99,7 +99,9 @@ validForLoops = [
         """,
         """
         {:for
-            :Setup X = 0
+            {:Setup
+                :SetVariable( X  0 )
+            }
             :Condition ( X > 3 )
             {:Body
                 :Add(Y 2)
@@ -108,7 +110,9 @@ validForLoops = [
         """,
         """
         {:for
-            :Setup X = 0
+            {:Setup
+                :SetVariable( X  0 )
+            }
             :Condition ( X > 3 )
             {:Expression
                 :Add(X 1)
@@ -119,7 +123,7 @@ validForLoops = [
         }
         """
         ]
-invalidForLoops = [
+invalidForBlocks = [
         """
         {:for
             {:Body
@@ -137,7 +141,9 @@ invalidForLoops = [
         """,
         """
         {:for
-            :Setup X = 0
+            {:Setup
+                :SetVariable( X  0 )
+            }
             {:Body
                 :Add(Y 2)
             }
@@ -145,8 +151,9 @@ invalidForLoops = [
         """,
         """
         {:for
-            :Setup X = 0
-            :Condition ( X > 3 )
+            {:Setup
+                :SetVariable( X  0 )
+            }
             {:Expression
                 :Add(X 1)
             }
@@ -164,6 +171,8 @@ class TestBlockExtraction(unittest.TestCase):
             block = parse(validBlock)
             self.assertTrue(isinstance(block, BasicBlock))
             self.assertTrue(isinstance(block.code[0], IfBlock), "Thinks this isn't an IF block: " + validBlock)
+            block.generateCode()
+            block.generatePreamble()
     def testExtractInvalidIf(self):
         for invalidBlock in invalidIfBlocks:
             try:
@@ -176,6 +185,8 @@ class TestBlockExtraction(unittest.TestCase):
             block = parse(validBlock)
             self.assertTrue(isinstance(block, BasicBlock))
             self.assertTrue(isinstance(block.code[0], ForBlock), "Thinks this isn't an FOR block: " + validBlock)
+            block.generateCode()
+            block.generatePreamble()
     def testExtractInvalidFor(self):
         for invalidBlock in invalidForBlocks:
             try:
