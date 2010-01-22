@@ -1,4 +1,4 @@
-Although currently empty, this is the plan:
+(This code is still in heavy development)
 
 MHEG-5 code has an unusual structure and code flow, which can make programming difficult. While writing code I noticed that I was using several common patterns to emulate if statements, for loops, etc. I decided it would be simpler, and make my programs more reliable, if I automated this. 
 
@@ -12,12 +12,12 @@ Plan:
     - Could do this with code replacement, but this wouldn't allow recursion. Best approach depends on the cost of re-assigning variables. Best solution probably is to offer both inline and external functions.
 
 3) If statements.
-    - Simple conditionals first (a < b, b == c, etc)
+    - Simple conditionals first (a < b, b == c, etc). DONE - still need to set the correct conditionals though.
     - Allow more complex conditionals in CNF or DNF
     - Convert any statement into equivalent CNF/DNF
 
 4) While loop.
-    - Simply an if statement with a call to the top again.
+    - Simply an if statement with a call to the top again. DONE - implemented with for loops without a setup or increment expression.
 
 5) For loop.
-    - Syntactic sugar for a while loop. Add first statement just before the while loop and the last just before the call.
+    - Syntactic sugar for a while loop. Add first statement just before the while loop and the last just before the call. DONE - Only simple conditionals, but allows arbitrary code in the setup and increment expression (for, if, function calls, etc)
