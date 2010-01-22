@@ -26,9 +26,9 @@ validIfBlocks = [
         ]
 invalidIfBlocks = [
         """
-        {if
-        :condition
-        }""",
+        {:If
+        }
+        """,
         """
         {:If
             :Condition
@@ -36,7 +36,28 @@ invalidIfBlocks = [
                 X = 3;
             }
         }
+        """,
         """
+        {:If
+            :Conditional ( x < 3 )
+            {:ifTrue
+                X = 3;
+            }
+        }
+        """,
+        """
+        {:If
+            :Condition (x>4)
+            {:ifTrue
+                X = 3;
+            }
+        }
+        """,
+        """
+        {:If
+            :Condition ( X < 4)
+        }
+        """,
         ]
 
 class TestBlockExtraction(unittest.TestCase):
@@ -47,9 +68,11 @@ class TestBlockExtraction(unittest.TestCase):
             self.assertTrue(isinstance(block.code[0], IfBlock), "Thinks this isn't an IF block: " + validBlock)
     def testExtractInvalidIf(self):
         for invalidBlock in invalidIfBlocks:
-            block = parse(invalidBlock)
-            self.assertTrue(isinstance(block, BasicBlock))
-            self.assertFalse(isinstance(block.code[0], IfBlock), "Thinks this is a valid IF block: " + invalidBlock)
+            try:
+                self.assertRaises(ParseError, parse, invalidBlock)
+            except self.failureException as e:
+                print invalidBlock
+                raise self.failureException
 
 
 def main():
