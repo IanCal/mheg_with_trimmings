@@ -60,6 +60,24 @@ invalidIfBlocks = [
         """,
         ]
 
+validConditionals = [
+        ["X",">","Y"],
+        ["X","<","Y"],
+        ["X","==","Y"],
+        ["X","!=","Y"],
+        ["X",">=","Y"],
+        ["X","<=","Y"]
+        ]
+invalidConditionals = [
+        [">","Y"],
+        ["X","<"],
+        ["X","Y"],
+        ["X","!!=","Y"],
+        ["X","<>=","Y"],
+        ["X","<==","Y"]
+        ]
+
+
 class TestBlockExtraction(unittest.TestCase):
     def testExtractValidIf(self):
         for validBlock in validIfBlocks:
@@ -73,6 +91,20 @@ class TestBlockExtraction(unittest.TestCase):
             except self.failureException as e:
                 print invalidBlock
                 raise self.failureException
+
+
+class TestConditionalParsing(unittest.TestCase):
+    def testParseValidConditional(self):
+        for validConditional in validConditionals:
+            conditional = Conditional(validConditional)
+    def testParseInvalidConditional(self):
+        for invalidConditional in invalidConditionals:
+            try:
+                self.assertRaises(ParseError, Conditional, invalidConditional)
+            except self.failureException as e:
+                print invalidConditional, e
+                raise self.failureException
+
 
 
 def main():
