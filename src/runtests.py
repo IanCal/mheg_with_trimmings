@@ -77,6 +77,86 @@ invalidConditionals = [
         ["X","<==","Y"]
         ]
 
+validForLoops = [
+        """
+        {:for
+            :Condition ( X > 3 )
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """,
+        """
+        {:for
+            :Condition ( X > 3 )
+            {:Expression
+                :Add(X 1)
+            }
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """,
+        """
+        {:for
+            :Setup X = 0
+            :Condition ( X > 3 )
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """,
+        """
+        {:for
+            :Setup X = 0
+            :Condition ( X > 3 )
+            {:Expression
+                :Add(X 1)
+            }
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """
+        ]
+invalidForLoops = [
+        """
+        {:for
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """,
+        """
+        {:for
+            :Condition ( X > 3 )
+            {:Expression
+                :Add(X 1)
+            }
+        }
+        """,
+        """
+        {:for
+            :Setup X = 0
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """,
+        """
+        {:for
+            :Setup X = 0
+            :Condition ( X > 3 )
+            {:Expression
+                :Add(X 1)
+            }
+            {:Body
+                :Add(Y 2)
+            }
+        }
+        """
+        ]
+
 
 class TestBlockExtraction(unittest.TestCase):
     def testExtractValidIf(self):
@@ -86,6 +166,18 @@ class TestBlockExtraction(unittest.TestCase):
             self.assertTrue(isinstance(block.code[0], IfBlock), "Thinks this isn't an IF block: " + validBlock)
     def testExtractInvalidIf(self):
         for invalidBlock in invalidIfBlocks:
+            try:
+                self.assertRaises(ParseError, parse, invalidBlock)
+            except self.failureException as e:
+                print invalidBlock
+                raise self.failureException
+    def testExtractValidFor(self):
+        for validBlock in validForBlocks:
+            block = parse(validBlock)
+            self.assertTrue(isinstance(block, BasicBlock))
+            self.assertTrue(isinstance(block.code[0], ForBlock), "Thinks this isn't an FOR block: " + validBlock)
+    def testExtractInvalidFor(self):
+        for invalidBlock in invalidForBlocks:
             try:
                 self.assertRaises(ParseError, parse, invalidBlock)
             except self.failureException as e:
