@@ -164,6 +164,82 @@ invalidForBlocks = [
         """
         ]
 
+validVariables = [
+        """
+        {:NamedVar
+            :Type OStringVar
+            :Name NamedVariable
+            :OrigValue "hello"
+            {:TestedTrue
+                :Add( OtherVariable 2 )
+            }
+            {:TestedFalse
+                :Add( YetAnotherVariable 3)
+            }
+        }
+        """,
+        """
+        {:NamedVar
+            :Type IntegerVar
+            :Name NamedVariable_2
+            :OrigValue 3
+            {:TestedTrue
+                :Add( OtherVariable 2 )
+            }
+        }
+        """,
+        """
+        {:NamedVar
+            :Type IntegerVar
+            :Name NamedVariable_2
+            :OrigValue 3
+        }
+        """,
+        """
+        {:NamedVar
+            :Type IntegerVar
+            :Name NamedVariable_2
+        }
+        """
+        ]
+invalidVariables = [
+        """
+        {:NamedVar
+            :Name NamedVariable
+            :OrigValue "hello"
+            {:TestedTrue
+                :Add( OtherVariable 2 )
+            }
+            {:TestedFalse
+                :Add( YetAnotherVariable 3)
+            }
+        }
+        """,
+        """
+        {:NamedVar
+            :Type IntegerVar
+            :OrigValue 3
+            {:TestedTrue
+                :Add( OtherVariable 2 )
+            }
+        }
+        """,
+        """
+        {:NamedVar
+        }
+        """,
+        """
+        {:NamedVar
+            :Type IntegerVar
+            :OrigValue 3
+            {:TestedTrue
+                :Add( OtherVariable 2 )
+        }
+        """
+        ]
+
+
+
 
 class TestBlockExtraction(unittest.TestCase):
     def testExtractValidIf(self):
@@ -184,7 +260,7 @@ class TestBlockExtraction(unittest.TestCase):
         for validBlock in validForBlocks:
             block = parse(validBlock)
             self.assertTrue(isinstance(block, BasicBlock))
-            self.assertTrue(isinstance(block.code[0], ForBlock), "Thinks this isn't an FOR block: " + validBlock)
+            self.assertTrue(isinstance(block.code[0], ForBlock), "Thinks this isn't a FOR block: " + validBlock)
             block.generateCode()
             block.generatePreamble()
     def testExtractInvalidFor(self):
@@ -193,6 +269,20 @@ class TestBlockExtraction(unittest.TestCase):
                 self.assertRaises(ParseError, parse, invalidBlock)
             except self.failureException as e:
                 print invalidBlock
+                raise self.failureException
+    def testExtractValidVariables(self):
+        for validVar in validVariables:
+            block = parse(validVar)
+            self.assertTrue(isinstance(block, BasicBlock))
+            self.assertTrue(isinstance(block.code[0], Variable), "Thinks this isn't a variable: " + validVar)
+            block.generateCode()
+            block.generatePreamble()
+    def testExtractInvalidVar(self):
+        for invalidVariable in invalidVariables:
+            try:
+                self.assertRaises(ParseError, parse, invalidVariable)
+            except self.failureException as e:
+                print invalidVariable
                 raise self.failureException
 
 

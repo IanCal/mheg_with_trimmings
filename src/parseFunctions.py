@@ -9,8 +9,12 @@ def codeIterator(code):
         if len(line) > 0:
             # ignore comments
             if line[0][:2] != "//":
-                yield line
+                yield (line, lineOfCode)
 
 def parse(code):
     codeIter = codeIterator(code)
     return BasicBlock(codeIter)
+
+def parseFile(filename):
+    blocks = parse(open(filename).read())
+    return blocks.printPreamble() + str(blocks)
