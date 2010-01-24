@@ -2,7 +2,7 @@ import unittest
 import os
 import sys
 from parseFunctions import *
-from subprocess import check_call
+from commands import getstatusoutput
 
 validIfBlocks = [
         """
@@ -304,17 +304,19 @@ class TestConditionalParsing(unittest.TestCase):
 
 class TestFullFiles(unittest.TestCase):
     def testValidCodeCompiles(self):
-        for validFile in os.listdir(sys.path[0]+"/tests/"):
-            if "-valid-" in validFile:
-                check_call(["python","parseFile.py %s > scratch-convertedfile.mhg.txt"])
-                check_call(["mhegc","-o scratchcompiled scratch-convertedfile.mhg.txt"])
-    def testValidCodeCompiles(self):
+        currentDirectory = sys.path[0]
+        for validFile in os.listdir(currentDirectory+"/tests/"):
+            if "-valid" in validFile:
+                if getstatusoutput("python %s/parseFile.py %s/tests/%s > scratch-convertedfile.mhg.txt"%(currentDirectory, currentDirectory, validFile))[0] != 0:
+                    self.fail("Could not parse %s"%(validFile))
+                if getstatusoutput("mhegc -o scratchcompiled scratch-convertedfile.mhg.txt")[0] != 0:
+                    self.fail("Could not compile %s"%(validFile))
+    def testInvalidCodeCompiles(self):
+        currentDirectory = sys.path[0]
         for invalidFile in os.listdir(sys.path[0]+"/tests/"):
-            if "-invalid-" in invalidFile:
-                returnValue = call(["python","parseFile.py %s > scratch-convertedfile.mhg.txt"])
-                returnValue += call(["mhegc","-o scratchcompiled scratch-convertedfile.mhg.txt"])
-                if returnValue == 0:
-                    self.fail("The file %s parsed and compiled, but it should have failed"%(invalidFile))
+            if "-invalid" in invalidFile:
+                if getstatusoutput("python %s/parseFile.py %s/tests/%s > scratch-convertedfile.mhg.txt"%(currentDirectory, currentDirectory, validFile))[0] == 0:
+                    self.fail("Parsed invalid file: %s"%(validFile))
 
 
 def main():

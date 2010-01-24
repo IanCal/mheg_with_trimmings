@@ -84,11 +84,11 @@ class Scene(BasicBlock):
 
 class Conditional():
     def __init__(self, conditional):
-        #TODO find the actual ordering of these
         validComparisons = {"==":1,"!=":2,"<":3,"<=":4,">":5,">=":6}
         try:
+            assert(len(conditional) > 2)
             self.first = conditional[0]
-            self.second = conditional[2]
+            self.second = " ".join(conditional[2:-1])
             if not(validComparisons.has_key(conditional[1])):
                 raise ParseError(conditional[1], "Not one of the accepted comparisons, requires one in "+str(validComparisons))
             else:
@@ -125,7 +125,10 @@ class IfBlock(BasicBlock):
                 raise ParseError(str(iffalse), "Should be a line starting with {:iffalse")
             # Parse the block of code within the iffalse statement
             self.iffalse = BasicBlock(codeIterator, True)
-            self.preamble.append(self.iftrue.printPreamble())
+            self.preamble.append(self.iffalse.printPreamble())
+            line, exact = codeIterator.next()
+            if line[0] != "}":
+                raise ParseError(exact, "Unexpected line")
         except Exception as e:
             raise ParseError("","Raised an exception: " + str(e))
         return
@@ -162,7 +165,7 @@ class IfBlock(BasicBlock):
         self.code.append(":SetVariable( %d :GInteger :IndirectRef %s )" % (self.variableNumber, self.condition.first) )
         # Run the test
         #self.code.append(":TestVariable( %d %d :IndirectRef %s )" % (self.variableNumber, self.condition.comparison, self.condition.second))
-        self.code.append(":TestVariable( %d %d :GInteger %d )" % (self.variableNumber, self.condition.comparison, int(self.condition.second)))
+        self.code.append(":TestVariable( %d %d :GInteger %s )" % (self.variableNumber, self.condition.comparison, self.condition.second))
         self.code.append("// End of auto-generated if-statement code")
 
 class ForBlock(BasicBlock):

@@ -1,0 +1,27 @@
+{:Scene
+    ( "~/filename-is-unnecessary.mhg" 0 )
+    :Items
+    (
+	{:IntegerVar 10 :OrigValue 0}
+	{:IntegerVar 11 :OrigValue 100}
+        {:Link
+            3
+                :EventSource 0          // Source is this scene
+                :EventType UserInput    // Event type that we are looking for
+                :EventData 103          // 103 for the blue key
+                :LinkEffect (
+                {:for
+                    :condition ( 10 < :IndirectRef 11 )
+                    {:body
+                        :Add ( 10 1 )
+                        :Divide ( 20 2 )
+                    }
+                }
+           )
+        }
+    )
+    :InputEventReg 3
+    :SceneCS 720 576
+}
+
+
