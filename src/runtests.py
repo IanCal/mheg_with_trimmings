@@ -13,7 +13,7 @@ validIfBlocks = [
                 Y = 10;
                 X = 3;
             }
-        ]
+        }
         """,
         """
         {:If
@@ -199,6 +199,7 @@ validVariables = [
         {:NamedVar
             :Type IntegerVar
             :Name NamedVariable_2
+            :OrigValue 3
         }
         """
         ]

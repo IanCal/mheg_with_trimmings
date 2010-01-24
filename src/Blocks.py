@@ -1,23 +1,27 @@
 from Exceptions import *
 
 class BasicBlock():
-    def __init__(self, codeIterator):
-        self.requireEndBracket = True
+    def __init__(self, codeIterator, ignoreFinalBracket = False, genericParsing = True):
+        self.ignoreFinalBracket = ignoreFinalBracket
         self.openbrackets = 1
         self.code = []
         self.preamble = []
         self.customParsing(codeIterator)
-        self.genericParsing(codeIterator)
+        self.generateCode()
+        self.generatePreamble()
+        if genericParsing:
+            self.genericParsing(codeIterator)
 
     def __str__(self):
-        self.generateCode()
-        stringRepresentation = str(self.code[0])
-        for codeblock in self.code[1:]:
-            stringRepresentation += "\n" + str(codeblock)
+        #self.generateCode()
+        if (len(self.code) > 0):
+            stringRepresentation = str(self.code[0])
+            for codeblock in self.code[1:]:
+                stringRepresentation += "\n" + str(codeblock)
+        else:
+            stringRepresentation = ""
         return stringRepresentation
-
     def printPreamble(self):
-        self.generatePreamble()
         ownPreamble = "\n".join(self.preamble)
         for internalblock in self.code:
             if not(isinstance(internalblock, str)):
@@ -34,6 +38,7 @@ class BasicBlock():
         pass
 
     def genericParsing(self, codeIterator):
+        num = id.next()
         while True:
             try:
                 tokens, exactLine = codeIterator.next()
@@ -42,7 +47,7 @@ class BasicBlock():
             if (len(tokens) > 0):
                 # Otherwise if it's the start of a special block, parse that
                 if tokenDictionary.has_key(tokens[0]):
-                    self.code.append(tokenDictionary[tokens[0]](codeIterator))
+                    self.code.append(tokenDictionary[tokens[0]](codeIterator, genericParsing = False))
                 # If the end of a block, stop parsing
                 elif (tokens[0][0] == "{"):
                     self.code.append(exactLine)
@@ -51,7 +56,10 @@ class BasicBlock():
                 elif (tokens[0] == "}"):
                     self.openbrackets -= 1
                     if self.openbrackets == 0:
+                        if not(self.ignoreFinalBracket):
+                            self.code.append(exactLine)
                         return False
+                        #self.code.append(exactLine)
                     else:
                         self.code.append(exactLine)
                 # Otherwise we're just looking at a normal line of code
@@ -90,8 +98,11 @@ class Conditional():
 
 class IfBlock(BasicBlock):
     def customParsing(self, codeIterator):
+        self.ignoreFinalBracket = True
+        self.genericParsing = False
         # Get the variable number for the if statement
         self.variableNumber = id.next()
+        self.iffalse = None
         try:
             conditionLine = codeIterator.next()[0]
             if conditionLine[0] != ":condition":
@@ -103,19 +114,21 @@ class IfBlock(BasicBlock):
             if iftrue[0] != "{:iftrue":
                 raise ParseError(str(iftrue), "Should be a line starting with {:iftrue")
             # Parse the block of code within the iftrue statement
-            self.iftrue = BasicBlock(codeIterator)
-
+            self.iftrue = BasicBlock(codeIterator, True)
+            self.preamble.append(self.iftrue.printPreamble())
             # Now look for the {:iffalse line. This is optional so a } might be encountered
+            """
             iffalse = codeIterator.next()[0]
             # End of the block?
             if iffalse[0] == "}":
                 self.iffalse = None
+                print "Finished iffasle"
                 return
             elif iffalse[0] != "{:iffalse":
                 raise ParseError(str(iffalse), "Should be a line starting with {:iffalse")
             # Parse the block of code within the iffalse statement
-            self.iffalse = BasicBlock(codeIterator)
-
+            self.iffalse = BasicBlock(codeIterator, True)
+            """
         except Exception as e:
             raise ParseError("","Raised an exception: " + str(e))
         return
@@ -158,6 +171,7 @@ class IfBlock(BasicBlock):
 class ForBlock(BasicBlock):
     def customParsing(self, codeIterator):
         # Get the variable name for the if statement
+        self.ignoreFinalBracket = True
         self.variableNumber = id.next()
         self.setup = ""
         self.expression = ""
@@ -168,13 +182,16 @@ class ForBlock(BasicBlock):
             line, exact = codeIterator.next()
             while line[0] != "}":
                 if line[0] == "{:setup":
-                    self.setup = BasicBlock(codeIterator)
+                    self.setup = BasicBlock(codeIterator, True)
+                    self.preamble.append(self.setup.printPreamble())
                 elif line[0] == ":condition":
                     self.condition = Conditional(line[2:])
                 elif line[0] == "{:expression":
-                    self.expression = BasicBlock(codeIterator)
+                    self.expression = BasicBlock(codeIterator, True)
+                    self.preamble.append(self.expression.printPreamble())
                 elif line[0] == "{:body":
-                    self.body = BasicBlock(codeIterator)
+                    self.body = BasicBlock(codeIterator, True)
+                    self.preamble.append(self.body.printPreamble())
                 else:
                     raise ParseError(str(line), "Unexpected line in for loop")
                 line, exact = codeIterator.next()
@@ -197,8 +214,8 @@ class ForBlock(BasicBlock):
             :LinkEffect (
                 %s
                 %s
-                :SetVariable( %d :IndirectRef %s )
-                :TestVariable( %d %d :IndirectRef %s )
+                :SetVariable( %d :GInteger :IndirectRef %s )
+                :TestVariable( %d %d :GInteger %s )
             )
         }
         """ % ("IntegerVar", self.variableNumber, id.next(), self.variableNumber, str(self.body), str(self.expression), self.variableNumber, self.condition.first, self.variableNumber, self.condition.comparison, self.condition.second))
@@ -208,9 +225,9 @@ class ForBlock(BasicBlock):
         #Setup the variable
         self.code.append("// Auto-generated for-loop code")
         self.code.append(str(self.setup))
-        self.code.append(":SetVariable( %d :IndirectRef %s )" % (self.variableNumber, self.condition.first) )
+        self.code.append(":SetVariable( %d :GInteger :IndirectRef %s )" % (self.variableNumber, self.condition.first) )
         # Run the test
-        self.code.append(":TestVariable( %d %d :IndirectRef %s )" % (self.variableNumber, self.condition.comparison, self.condition.second))
+        self.code.append(":TestVariable( %d %d :GInteger  %s )" % (self.variableNumber, self.condition.comparison, self.condition.second))
         self.code.append("// End of auto-generated for-loop code")
 
 
@@ -218,6 +235,7 @@ class Variable(BasicBlock):
     def customParsing(self, codeIterator):
         self.variableNumber = id.next()
         self.name = None
+        self.originalValue = None
         self.type = None
         self.testTrue = None
         self.testFalse = None
@@ -242,6 +260,8 @@ class Variable(BasicBlock):
                 raise ParseError("", "Missing a name in the named variable declaration")
             if self.type == None:
                 raise ParseError("", "Missing a type in the named variable declaration")
+            if self.originalValue == None:
+                raise ParseError("", "Missing an origvalue in the named variable declaration")
         except Exception as e:
             raise ParseError("","Raised an exception: " + str(e))
         return
@@ -273,7 +293,7 @@ class Variable(BasicBlock):
             """ % (id.next(), self.variableNumber, str(self.testFalse)))
 
     def generateCode(self):
-        self.code.append("{:%s %d %s}" % ( self.type, self.variableNumber, self.origvalue ))
+        self.code.append("{:%s %d :OrigValue %s}" % ( self.type, self.variableNumber, self.originalValue ))
 
 
 
