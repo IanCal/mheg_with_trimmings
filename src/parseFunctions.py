@@ -9,6 +9,7 @@ def codeIterator(code):
         if len(line) > 0:
             # ignore comments
             if line[0][:2] != "//":
+                #print "line:",line
                 yield (line, lineOfCode)
 
 def parse(code):

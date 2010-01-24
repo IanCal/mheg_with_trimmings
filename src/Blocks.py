@@ -1,16 +1,15 @@
 from Exceptions import *
 
 class BasicBlock():
-    def __init__(self, codeIterator, ignoreFinalBracket = False, genericParsing = True):
+    def __init__(self, codeIterator, ignoreFinalBracket = False):
         self.ignoreFinalBracket = ignoreFinalBracket
-        self.openbrackets = 1
+        self.openbrackets = 0
         self.code = []
         self.preamble = []
         self.customParsing(codeIterator)
+        self.genericParsing(codeIterator)
         self.generateCode()
         self.generatePreamble()
-        if genericParsing:
-            self.genericParsing(codeIterator)
 
     def __str__(self):
         #self.generateCode()
@@ -45,9 +44,10 @@ class BasicBlock():
             except StopIteration:
                 return False
             if (len(tokens) > 0):
+                #print "GENERIC PARSING:",tokens
                 # Otherwise if it's the start of a special block, parse that
                 if tokenDictionary.has_key(tokens[0]):
-                    self.code.append(tokenDictionary[tokens[0]](codeIterator, genericParsing = False))
+                    self.code.append(tokenDictionary[tokens[0]](codeIterator))
                 # If the end of a block, stop parsing
                 elif (tokens[0][0] == "{"):
                     self.code.append(exactLine)
@@ -55,11 +55,11 @@ class BasicBlock():
                 # If the end of a block, stop parsing
                 elif (tokens[0] == "}"):
                     self.openbrackets -= 1
-                    if self.openbrackets == 0:
+                    if self.openbrackets <= 0:
                         if not(self.ignoreFinalBracket):
                             self.code.append(exactLine)
                         return False
-                        #self.code.append(exactLine)
+                        self.code.append(exactLine)
                     else:
                         self.code.append(exactLine)
                 # Otherwise we're just looking at a normal line of code
@@ -97,9 +97,8 @@ class Conditional():
             raise ParseError(conditional, "Raised an exception: " + str(e))
 
 class IfBlock(BasicBlock):
-    def customParsing(self, codeIterator):
+    def genericParsing(self, codeIterator):
         self.ignoreFinalBracket = True
-        self.genericParsing = False
         # Get the variable number for the if statement
         self.variableNumber = id.next()
         self.iffalse = None
@@ -117,18 +116,16 @@ class IfBlock(BasicBlock):
             self.iftrue = BasicBlock(codeIterator, True)
             self.preamble.append(self.iftrue.printPreamble())
             # Now look for the {:iffalse line. This is optional so a } might be encountered
-            """
             iffalse = codeIterator.next()[0]
             # End of the block?
             if iffalse[0] == "}":
                 self.iffalse = None
-                print "Finished iffasle"
                 return
             elif iffalse[0] != "{:iffalse":
                 raise ParseError(str(iffalse), "Should be a line starting with {:iffalse")
             # Parse the block of code within the iffalse statement
             self.iffalse = BasicBlock(codeIterator, True)
-            """
+            self.preamble.append(self.iftrue.printPreamble())
         except Exception as e:
             raise ParseError("","Raised an exception: " + str(e))
         return
@@ -169,7 +166,7 @@ class IfBlock(BasicBlock):
         self.code.append("// End of auto-generated if-statement code")
 
 class ForBlock(BasicBlock):
-    def customParsing(self, codeIterator):
+    def genericParsing(self, codeIterator):
         # Get the variable name for the if statement
         self.ignoreFinalBracket = True
         self.variableNumber = id.next()
@@ -232,7 +229,7 @@ class ForBlock(BasicBlock):
 
 
 class Variable(BasicBlock):
-    def customParsing(self, codeIterator):
+    def genericParsing(self, codeIterator):
         self.variableNumber = id.next()
         self.name = None
         self.originalValue = None

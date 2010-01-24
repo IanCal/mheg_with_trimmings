@@ -1,0 +1,79 @@
+{:Scene
+    ( "~/hello.mhg" 0 )
+    :Items
+    (
+	{:IntegerVar 10 :OrigValue 0}
+	{:IntegerVar 11 :OrigValue 2}
+	{:IntegerVar 13 :OrigValue 0}
+    {:OStringVar 12 :OrigValue ""}
+
+
+        // Declare a background Rectangle that covers the screen.
+        {:Rectangle
+            1
+            :OrigBoxSize 720 576                // Size of rectangle
+            :OrigPosition 0 0                   // Position at top left
+            :OrigRefLineColour '=ff=ff=ff=00'   // White
+            :OrigRefFillColour '=ff=ff=ff=00'   // White
+        }
+
+        {:Text
+        2
+            :OrigContent "Hello World!"         // Text to display
+            :OrigBoxSize 300 50                 // Size of text box
+            :OrigPosition 200 100               // X,Y position
+            :FontAttributes "plain.36.42.0"     // Use large characters
+            :TextColour '=ff=00=00=00'          // Red
+        }
+        {:Text
+        3
+            :OrigContent "Hello World!"         // Text to display
+            :OrigBoxSize 300 50                 // Size of text box
+            :OrigPosition 200 200               // X,Y position
+            :FontAttributes "plain.36.42.0"     // Use large characters
+            :TextColour '=ff=00=00=00'          // Red
+        }
+        {:Link
+            3
+                :EventSource 0          // Source is this scene
+                :EventType UserInput    // Event type that we are looking for
+                :EventData 103          // 103 for the blue key
+                :LinkEffect (
+                {:for
+               :condition ( 11 < 1100 )
+                {:expression
+                    :Add(11 1)
+                }
+                {:body
+                    :SetVariable ( 12 :GInteger :IndirectRef 11 )
+                    :SetData( 2 :IndirectRef 12 )
+                            {:for
+                            {:setup
+                                :SetVariable( 13 :GInteger 1 )
+                            }
+                            :condition ( 13 < 1100 )
+                            {:expression
+                                :Add(13 1)
+                            }
+                            {:body
+                                {:if
+                                :condition ( 13 != 1 )
+                                {:iftrue
+                                    :SetVariable ( 12 :GInteger :IndirectRef 13 )
+                                    :SetData( 3 :IndirectRef 12 )
+                                }
+                            }
+                            }
+                            :SetData ( 3 :IndirectRef 12 )
+                   }
+                }
+                    
+           )
+        }
+
+    )
+    :InputEventReg 3
+    :SceneCS 720 576
+}
+
+
